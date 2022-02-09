@@ -4,14 +4,15 @@
 
 
 generate_transition_matrices <- function(input_parameters) {
-  # UK lifetables are fixed so are not part of the input parameters matrix
-  # This saves membory of an n_sample*100 (i.e., number of ages) matrix
-  uk_lifetables <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "uk_lifetables")
-  
   # One 4x4 transition matrix for each cycle, implant_name and sample.
   transition_matrices <- array(0, dim = c(n_cycles, n_implants, n_samples, n_states, n_states),
                                dimnames = list(NULL, implant_names, NULL, state_names, state_names))
   
+  # UK lifetables are fixed so are not part of the input parameters matrix
+  # This saves memory of an n_sample*100 (i.e., number of ages) matrix
+  uk_lifetables <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "uk_lifetables")
+  
+
   for(i_cycle in 1:n_cycles) {
     for(implant_name in implant_names) {
       transition_matrices[i_cycle, implant_name, , "post_thr", "post_1st_rev"] <- 
@@ -37,11 +38,11 @@ generate_transition_matrices <- function(input_parameters) {
     } # End loop over implant_names
   } # End loop over cycles
   
-  # At this point do a unit test
+  # At this point do a test and throw and error if it fails
   if(prod(rowSums(transition_matrices[sample(1:n_cycles, 1),
                               sample(implant_names, 1),
                               sample(1:n_samples, 1), , ]) == 1) != 1) {
-    print("Warning: Rows must sum to 1!")
+    stop("Rows must sum to 1!")
   }
   
   return(transition_matrices)

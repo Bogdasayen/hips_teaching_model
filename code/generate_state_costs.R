@@ -9,7 +9,7 @@ generate_state_costs <- function(input_parameters) {
   # Define an array to store state costs for each treatment, sample and state
   state_costs <- array(NA, dim = c(n_implants, n_samples, n_states),
                        dimnames = list(implant_names, NULL, state_names))
-  # Cost of 1 year in post total hip replacement depends on annual probability of 1st revisison
+  # Cost of 1 year in post total hip replacement depends on annual probability of 1st revision
   # This is implant dependent
   for(implant_name in implant_names) {
     state_costs[implant_name, , "post_thr"] <- input_parameters$cost_revision * 
@@ -24,6 +24,7 @@ generate_state_costs <- function(input_parameters) {
   state_costs[, , "post_2nd_rev"] <- rep(input_parameters$cost_revision * 
                                            (1 - exp(-exp(input_parameters$log_rate_higher_revision))), each = n_implants)
   
+  # Zero cost of being in the dead state
   state_costs[, , "dead"] <- 0
   
   return(state_costs)

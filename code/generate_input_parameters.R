@@ -8,6 +8,15 @@
 require(readxl)
 
 generate_input_parameters <- function(n_samples) {
+  # 15 random parameters in the HIPS teaching model
+  input_parameters <- as.data.frame(matrix(nrow = n_samples, ncol = 15))
+  colnames(input_parameters) <- c(paste0("log_rate_1st_revision_", implant_names),
+                                  "log_rate_2nd_revision", "log_rate_higher_revision",
+                                  "cost_revision",
+                                  paste0("state_utility_", state_names),
+                                  paste0("implant_cost_", implant_names)
+  )
+  
   # Log rates of first revision for each implant
   log_rates_1st_revision_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "log_rates_1st_revision")
   # Log rates of second and higher revision
@@ -17,14 +26,7 @@ generate_input_parameters <- function(n_samples) {
   # Utilities for the health states
   state_utilities_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "state_utilities")
   
-  # 18 random parameters in the HIPS teaching model
-  input_parameters <- as.data.frame(matrix(nrow = n_samples, ncol = 15))
-  colnames(input_parameters) <- c(paste0("log_rate_1st_revision_", implant_names),
-                                  "log_rate_2nd_revision", "log_rate_higher_revision",
-                                  "cost_revision",
-                                  paste0("state_utility_", state_names),
-                                  paste0("implant_cost_", implant_names)
-  )
+
   
   # Log rates of 1st revision are Normally distributed
   input_parameters$log_rate_1st_revision_cemented <- with(log_rates_1st_revision_raw, rnorm(n_samples, mean = Mean[Implant == "cemented"],
@@ -59,6 +61,7 @@ generate_input_parameters <- function(n_samples) {
                                                                              sd = SE[State == "post_1st_rev"]))
   input_parameters$state_utility_post_2nd_rev <- with(state_utilities_raw, rnorm(n_samples, mean = Mean[State == "post_2nd_rev"],
                                                                                  sd = SE[State == "post_2nd_rev"]))
+  # Zero utility in dead state
   input_parameters$state_utility_dead <- 0
   
   return(input_parameters)
