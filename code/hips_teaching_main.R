@@ -37,7 +37,7 @@ implant_names <- c("cemented", "uncemented", "hybrid", "reverse_hybrid")
 
 # Generate a matrix of input parameters
 # One row for each sample, one column for each parameter
-input_parameters <- generate_input_parameters(n_samples, sensitivity = "alt_utility")
+input_parameters <- generate_input_parameters(n_samples)
 
 # Generate the net benefit using the above input parameters
 model_output <- generate_net_benefit(input_parameters)
