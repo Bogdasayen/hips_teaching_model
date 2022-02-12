@@ -43,6 +43,9 @@ input_parameters <- generate_input_parameters(n_samples)
 model_output <- generate_net_benefit(input_parameters)
 
 
+rowMeans(model_output$net_benefit)
+rowMeans(x$net_benefit)
+
 # Now use the BCEA package to analyse the results___
 # Note costs and QALYs need to be transposed in this example for BCEA to run
 hips_bcea <- bcea(e = t(model_output$total_qalys), 
