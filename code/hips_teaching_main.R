@@ -88,28 +88,28 @@ evpi_table["Total", c("Per person", "Population")] <-  hips_bcea$evi[201] * c(1,
 
 # Log rate of first revision (same EVPPI as if calculating probability)
 # Use GP instead of GAM as 4 parameters
-evppi_gp_1st_revision <- evppi(parameter =  
-                               c("log_rate_1st_revision_cemented",
-                                 "log_rate_1st_revision_uncemented",    
-                                 "log_rate_1st_revision_hybrid",        
-                                 "log_rate_1st_revision_reverse_hybrid"), 
-                             input = input_parameters, he = hips_bcea, method = 'gp')
+evppi_gp_1st_revision <- evppi(he = hips_bcea,
+                               param_idx = c("log_rate_1st_revision_cemented",
+                                             "log_rate_1st_revision_uncemented",    
+                                             "log_rate_1st_revision_hybrid",        
+                                             "log_rate_1st_revision_reverse_hybrid"), 
+                               input = input_parameters,  method = 'gp')
 evpi_table["1st revision probabilities", c("Per person", "Population")] <- evppi_gam_1st_revision$evppi[201] * c(1, discounted_population_size)
 
 
 # Log rate 2nd and higher revision probabilities
-evppi_gam_2nd_and_higher_revision <- evppi(parameter =  
-                                  c("log_rate_2nd_revision",
-                                    "log_rate_higher_revision"), 
-                                input = input_parameters, he = hips_bcea, method = 'gam')
+evppi_gam_2nd_and_higher_revision <- evppi(he = hips_bcea,
+                                           param_idx = c("log_rate_2nd_revision",
+                                                         "log_rate_higher_revision"), 
+                                           input = input_parameters, method = 'gam')
 evpi_table["2nd and higher revision probabilities", c("Per person", "Population")] <- evppi_gam_2nd_and_higher_revision$evppi[201] * c(1, discounted_population_size)
 
 # Utilities
-evppi_gam_utilities <- evppi(parameter =  
-                               c( "state_utility_post_thr",              
-                                  "state_utility_post_1st_rev",          
-                                  "state_utility_post_2nd_rev"), 
-                             input = input_parameters, he = hips_bcea, method = 'gam')
+evppi_gam_utilities <- evppi(he = hips_bcea, 
+                             param_idx = c( "state_utility_post_thr",              
+                                            "state_utility_post_1st_rev",          
+                                            "state_utility_post_2nd_rev"), 
+                             input = input_parameters,  method = 'gam')
 evpi_table["Utilities", c("Per person", "Population")] <- evppi_gam_utilities$evppi[201] * c(1, discounted_population_size)
 
 
