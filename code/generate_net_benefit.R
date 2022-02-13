@@ -56,7 +56,7 @@ generate_net_benefit <- function(input_parameters, lambda = 20000) {
         # i_e_ pi_j = pi_(j-1)*P
         cohort_vectors[i_cycle, i_implant, i_sample, ] <- 
           cohort_vectors[i_cycle - 1, i_implant, i_sample, ]%*%
-          transition_matrices[i_cycle, i_implant, i_sample, , ]
+          transition_matrices[i_cycle - 1, i_implant, i_sample, , ]
       }
       
       # Now use the cohort vectors to calculate the 
