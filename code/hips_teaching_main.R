@@ -42,6 +42,17 @@ input_parameters <- generate_input_parameters(n_samples)
 # Generate the net benefit using the above input parameters
 model_output <- generate_net_benefit(input_parameters)
 
+# Average costs
+rowMeans(model_output$total_costs)
+# Average QALYS
+rowMeans(model_output$total_qalys)
+
+# Calculate an ICER without BCEA
+incremental_costs <- t(model_output$total_costs) - t(model_output$total_costs)[, 1]
+incremental_qalys <- t(model_output$total_qalys) - t(model_output$total_qalys)[, 1]
+ICER <- colMeans(incremental_costs) / colMeans(incremental_qalys)
+
+
 # Now use the BCEA package to analyse the results___
 # Note costs and QALYs need to be transposed in this example for BCEA to run
 hips_bcea <- bcea(e = t(model_output$total_qalys), 
