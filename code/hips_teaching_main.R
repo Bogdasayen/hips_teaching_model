@@ -40,22 +40,7 @@ implant_names <- c("cemented", "uncemented", "hybrid", "reverse_hybrid")
 input_parameters <- generate_input_parameters(n_samples)
 
 # Generate the net benefit using the above input parameters
-system.time({
 model_output <- generate_net_benefit(input_parameters)
-})
-system.time({
-  x <- generate_net_benefit_optimized(input_parameters)
-})
-system.time({
-  y <- generate_net_benefit_optimized_cpp(input_parameters)
-})
-
-rowMeans(model_output$net_benefit)
-rowMeans(x$net_benefit)
-rowMeans(y$net_benefit)
-
-rowMeans(x$total_qalys)
-rowMeans(y$total_qalys)
 
 # Now use the BCEA package to analyse the results___
 # Note costs and QALYs need to be transposed in this example for BCEA to run
