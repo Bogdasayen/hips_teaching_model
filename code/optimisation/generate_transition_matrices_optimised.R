@@ -5,7 +5,7 @@
 # Very simple optimization using the rep() function to avoid double loops
 # Less readable and only about 10% faster!
 
-generate_transition_matrices_optimized <- function(input_parameters) {
+generate_transition_matrices_optimised <- function(input_parameters) {
   # One 4x4 transition matrix for each cycle, implant_name and sample.
   transition_matrices <- array(0, dim = c(n_cycles, n_implants, n_samples, n_states, n_states),
                                dimnames = list(NULL, implant_names, NULL, state_names, state_names))

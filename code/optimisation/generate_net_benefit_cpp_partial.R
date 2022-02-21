@@ -4,14 +4,18 @@
 
 # Function to use Markov modelling to simulate total costs, QALYs and net benefit
 
-# Optimized to use lapply over treatments and vectorisation over samples to minimize loops
-# With ackowledgement to work conducted during November 2019 hackathon with the Hermes6 team 
-# https://github.com/HealthEconomicsHackathon/hermes6/tree/master/R
-# Only about twice as fast as the unoptimized version
+# Optimised by replacing the loop over cycles as C++
+# Loop over treatments and samples remains in R
 
-generate_net_benefit_optimized <- function(input_parameters, lambda = 20000) {
+# Uses the Rcpp package
+require(Rcpp)
+# Compiles the C++ file for the Markov loop
+Rcpp::sourceCpp(file = paste0(optimisation_directory, "/rcpp_loop.cpp"))
+
+
+generate_net_benefit_cpp_partial <- function(input_parameters, lambda = 20000) {
   # First generate components needed for simulation
-  transition_matrices <- generate_transition_matrices_optimized(input_parameters)
+  transition_matrices <- generate_transition_matrices_optimised(input_parameters)
   state_costs <- generate_state_costs(input_parameters)
   state_qalys <- input_parameters[, grepl("state_utility", colnames(input_parameters))]
   
@@ -69,24 +73,41 @@ generate_net_benefit_optimized <- function(input_parameters, lambda = 20000) {
     # but in general allow this for optimization
     state_qalys_tr <- state_qalys
     
-    # Loop over the cycles
-    # Cycle 1 is already defined so only need to update cycles 2:n_cycles
-    for(i_cycle in 2:n_cycles)
-    {
-      # Markov update
-      # Multiply previous cycle's cohort vector by transition matrix
-      # For loop over states instead of samples is faster as fewer iterations
-      for(i_state in 1:n_states) {
-        cohort_vectors_tr[i_cycle, , i_state] <- 
-          rowSums(cohort_vectors_tr[i_cycle - 1 , , ] * transition_matrices_tr[i_cycle, , , i_state])
-      }
-    } 
-  
+    
+    #transition_matrices_tr_stacked <- apply(transition_matrices_tr, 4, c)
+    #transition_matrices_tr_stacked[, ]
+    #transition_matrices_tr_sample_stacked[c(1, 31, 61, 91) , ]
+    
+   # transition_matrices_tr_sample_stacked
+    
     # Loop over the PSA samples
+    # Pre-calculate rearrangement vector
+    stacked_rearrangement_vector <- rep(c(0:(n_states - 1))*n_cycles, n_cycles) + rep(1:n_cycles, each = n_states)
     for (i_sample in 1:n_samples) {
-      # Use cohort vecotrs to calculate cycle costs and qalys
-      cycle_costs_tr[, i_sample] <- cohort_vectors_tr[, i_sample, ] %*% state_costs_tr[i_sample, ]
-      cycle_qalys_tr[, i_sample] <- cohort_vectors_tr[, i_sample, ] %*% state_qalys_tr[i_sample, ]
+      
+      # Transition matrices corresponding to this implant and sample
+      transition_matrices_tr_sample <- transition_matrices_tr[, i_sample, , ]
+      # Cohort vector corresponding to this implant and sample
+      cohort_vectors_tr_sample <- cohort_vectors_tr[, i_sample, ]
+      
+      # Loop over cycles implemented in C++
+      # C++ does not work with arrays
+      # So pass transition matrices as a column of stacked matrices
+      transition_matrices_tr_sample_stacked <- apply(transition_matrices_tr_sample, 3, c)
+      # Without rearranging the transition matrix for i_cycle is index using
+      # transition_matrices_tr_sample_stacked[i_cycle + (0:(n_states-1)) * n_cycles, ]
+      # Rearrange so that each set of n_states rows corresponds to a single transition matrix
+      transition_matrices_tr_sample_stacked <- 
+        transition_matrices_tr_sample_stacked[stacked_rearrangement_vector, ]
+
+      
+      cohort_vectors_tr_sample <- 
+        rcpp_loop(cohort_vectors_in = cohort_vectors_tr_sample, 
+                  transition_matrices = transition_matrices_tr_sample_stacked)
+   
+      # Use cohort vectors to calculate cycle costs and qalys
+      cycle_costs_tr[, i_sample] <- cohort_vectors_tr_sample[,  ] %*% state_costs_tr[i_sample, ]
+      cycle_qalys_tr[, i_sample] <- cohort_vectors_tr_sample[, ] %*% state_qalys_tr[i_sample, ]
       # Sum  and discount to get total costs and qalys
       # Add implant costs to total costs
       total_costs_tr[i_sample] <- treatment_costs_tr[i_sample] + cycle_costs_tr[, i_sample] %*% discount_vector
