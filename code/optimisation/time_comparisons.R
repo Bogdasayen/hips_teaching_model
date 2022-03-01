@@ -26,6 +26,7 @@ source(paste0(code_directory, "/generate_net_benefit.R"))
 
 # Run optimisations scripts
 source(paste0(optimisation_directory, "/generate_transition_matrices_optimised.R"))
+source(paste0(optimisation_directory, "/generate_transition_matrices_df.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_lapply.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_lapply_vectorised.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_cpp_partial.R"))
