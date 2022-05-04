@@ -70,7 +70,7 @@ ceac.plot(hips_multi_ce, graph = "ggplot",
 
 # Rank proportions EVPPI/EVPI to identify most influential parameters
 # Used lambda = 30000 as little uncertainty at lambda = 20000
-hips_inp <- createInputs(colnames(input_parameters), input = input_parameters)
+hips_inp <- createInputs(inputs = input_parameters)
 info.rank(inp = hips_inp,
           hips_bcea, xlim = c(0, 1), wtp = 30000, howManyPars = NA, graph = "base",
           mai = c(1.36, 2.2, 1, 1)) # Adjusted the margins to keep param names on screen
