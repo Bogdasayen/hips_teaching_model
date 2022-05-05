@@ -20,7 +20,7 @@ generate_input_parameters <- function(n_samples) {
   # Log rates of first revision for each implant
   log_rates_1st_revision_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "log_rates_1st_revision")
   # Log rates of second and higher revision
-  other_log_rates_raw <- state_utilies_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "other_log_rates")
+  other_log_rates_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "other_log_rates")
   # Implant and revision costs (All fixed)
   costs_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "costs")
   # Utilities for the health states
