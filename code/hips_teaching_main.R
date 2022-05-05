@@ -8,6 +8,8 @@ set.seed(2345295)
 # Target population is 65 year old males
 
 # Load necessary libraries
+# Install the latest version of BCEA from github
+# devtools::install_github("n8thangreen/BCEA")
 library(readxl)
 library(BCEA)
 library(ggplot2)
