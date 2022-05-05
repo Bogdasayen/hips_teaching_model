@@ -67,7 +67,7 @@ ceplane.plot(hips_bcea, wtp = 20000, xlim = c(-0.05, 0.05), ylim = c(-1800, 1800
 #plot a CEAC
 hips_multi_ce <- multi.ce(hips_bcea)
 ceac.plot(hips_multi_ce, graph = "ggplot",
-          line = list(colors = c("red", "green", "blue", "orange")),
+          line = list(color = c("red", "green", "blue", "orange")),
         pos = c(0, 0.50))
 
 # Rank proportions EVPPI/EVPI to identify most influential parameters
