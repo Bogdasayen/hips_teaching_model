@@ -2,6 +2,10 @@
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
 # Howard Thom February 2022
 
+# These lines are only needed if using the future.apply package but this didn't give speed beenfit
+#library(future.apply)
+#plan(multisession) ## Run in parallel on local computer
+
 # Set seed for random number generation
 set.seed(2345295)
 
@@ -11,6 +15,7 @@ set.seed(2345295)
 library(readxl)
 library(BCEA)
 library(ggplot2)
+
 
 # Define global parameters for the data and source code directories
 # Data could be separate location than GitHub project if data were sensitive
@@ -29,13 +34,15 @@ source(paste0(optimisation_directory, "/generate_transition_matrices_optimised.R
 source(paste0(optimisation_directory, "/generate_transition_matrices_df.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_lapply.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_lapply_vectorised.R"))
+source(paste0(optimisation_directory, "/generate_net_benefit_lapply_vectorised_parallel.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_cpp_partial.R"))
 source(paste0(optimisation_directory, "/convert_transition_matrices_to_df.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_cpp_full.R"))
+source(paste0(optimisation_directory, "/generate_net_benefit_cpp_full_parallel.R"))
 source(paste0(optimisation_directory, "/generate_net_benefit_df.R"))
 
 # Define global parameters that are accessed by all functions
-n_samples <- 10000
+n_samples <- 1000
 n_states <- 4
 n_implants <- 4
 # Age of cohort is used to access correct lifetable
@@ -75,6 +82,14 @@ system.time({
 system.time({
   mo_lapply_vectorised <- generate_net_benefit_lapply_vectorised(input_parameters)
 })
+
+# Run lapply in parallel using future.apply package
+# Slower if using 1000 or 10000 samples as set-up for parallelisation takes time
+# At 100000 got an error that the exports exceeded the limit for 'future' expressions
+#system.time({
+#  mo_lapply_vectorised_parallel <- generate_net_benefit_lapply_vectorised_parallel(input_parameters)
+#})
+
 # Conversion of loop over cycles to C/C++ by ~45%
 system.time({
   mo_cpp_partial <- generate_net_benefit_cpp_partial(input_parameters)
@@ -84,6 +99,12 @@ system.time({
 system.time({
   mo_cpp_full <- generate_net_benefit_cpp_full(input_parameters)
 })
+
+# Run lapply of C++ in parallel, but this is slower due to parallelisation setup time
+# Again slower that non-parallel case
+#system.time({
+#  mo_cpp_full_parallel <- generate_net_benefit_cpp_full_parallel(input_parameters)
+#})
 # Conversion to data frames is an interim step before C/C++ - don't run as VERY slow
 #system.time({
  # mo_df <- generate_net_benefit_df(input_parameters)
@@ -94,6 +115,7 @@ system.time({
 # Ensure different methods give the same results
 rowMeans(model_output$net_benefit)
 rowMeans(mo_lapply_vectorised$net_benefit)
+rowMeans(mo_lapply_vectorised_parallel$net_benefit)
 rowMeans(mo_cpp_partial$net_benefit)
 rowMeans(mo_cpp_full$net_benefit)
 
