@@ -1,0 +1,6 @@
+Package: HIPS
+Type: Package
+Title: Hip replacement model for teaching economic evaluation modelling in R  
+Version: 0.0.1.0
+RoxygenNote: 7.2.3
+Encoding: UTF-8

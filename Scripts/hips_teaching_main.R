@@ -1,6 +1,6 @@
 # HIPS Teaching model based on published data in 
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
-# Howard Thom February 2022
+# Howard Thom April 2023
 
 # Set seed for random number generation
 set.seed(2345295)
@@ -10,20 +10,25 @@ set.seed(2345295)
 # Load necessary libraries
 # Install the latest version of BCEA from github
 # devtools::install_github("n8thangreen/BCEA")
+# install.packages("devtools")
+# install.packages("roxygen2")
+# install.packages("readxl")
+# install.packages("ggplot2")
+
 library(readxl)
 library(BCEA)
 library(ggplot2)
 
-# Define global parameters for the data and source code directories
+# Load necessary functions from the package
+devtools::load_all()
+# Update the documentation (if necessary)
+# roxygen2::roxygenise()
+
+# Define global parameters for the data directory
 # Data could be separate location than GitHub project if data were sensitive
 data_directory <- "data"
-code_directory <- "code"
 
-# Load necessary functions
-source(paste0(code_directory, "/generate_input_parameters.R"))
-source(paste0(code_directory, "/generate_transition_matrices.R"))
-source(paste0(code_directory, "/generate_state_costs.R"))
-source(paste0(code_directory, "/generate_net_benefit.R"))
+
 
 # Define global parameters that are accessed by all functions
 n_samples <- 1000

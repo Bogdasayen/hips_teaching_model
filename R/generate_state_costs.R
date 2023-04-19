@@ -1,9 +1,23 @@
 # HIPS Teaching model based on published data in 
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
-# Howard Thom February 2022
+# Howard Thom April 2023
 
-# Function to generate state costs for each implant, sample, and state
-
+#' Function to generate state costs for each implant, sample, and state. This is
+#' used internally by the generate_net_benefit() function
+#' @param input_parameters Matrix with row for each sample and column 
+#' for each parameter, with values samples for the model input parameters
+#' @return Array of n_implants x n_samples x n_states, with values equal to costs 
+#' for each state for each implant and sample
+#' @examples 
+#' # First sample the input parameters
+#' input_parameters <- generate_input_parameters(n_samples)
+#' 
+#' # Generate the state costs
+#' state_costs <- generate_state_costs(input_parameters)
+#' 
+#' # Sampled costs for first implant
+#' state_costs[1, , ]
+#' @export 
 generate_state_costs <- function(input_parameters) {
 
   # Define an array to store state costs for each treatment, sample and state

@@ -1,9 +1,26 @@
 # HIPS Teaching model based on published data in 
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
-# Howard Thom February 2022
+# Howard Thom April 2023
 
-# Function to use Markov modelling to simulate total costs, QALYs and net benefit
-
+#' Function to use Markov modelling to simulate total costs, QALYs and net benefit
+#' @param input_parameters Matrix with row for each sample and column 
+#' for each parameter, with values samples for the model input parameters
+#' @param lambda Willingness-to-pay threshold for net monetary benefit
+#' @return List of matrices total_costs, total_qalys, net_benefit and 
+#' incremental_net_benefit with n_implants rows and n_samples columns
+#' @examples 
+#' # First sample the input parameters
+#' input_parameters <- generate_input_parameters(n_samples)
+#' 
+#' # Generate the net benefit using the above input parameters
+#' model_output <- generate_net_benefit(input_parameters, lambda = 20000)
+#' 
+#' # Average costs
+#' rowMeans(model_output$total_costs)
+#' 
+#' # Average QALYS
+#' rowMeans(model_output$total_qalys)
+#' @export 
 generate_net_benefit <- function(input_parameters, lambda = 20000) {
   # First generate components needed for simulation
   transition_matrices <- generate_transition_matrices(input_parameters)

@@ -1,12 +1,16 @@
 # HIPS Teaching model based on published data in 
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
-# Howard Thom February 2022
-
-# Function to generate random parameters to the Markov model
-# These are based on 'parameters' defined in hips_input_data.xlsx
+# Howard Thom April 2023
 
 require(readxl)
 
+#' Function to generate random parameters to the Markov model
+#' These are based on 'parameters' defined in hips_input_data.xlsx
+#' @param n_samples Number of samples to generate
+#' @return Matrix with n_samples rows and 15 columns, one for each parameter
+#' @examples 
+#' sampled_input_parameters <- generate_input_parameters(10)
+#' @export 
 generate_input_parameters <- function(n_samples) {
   # 15 random parameters in the HIPS teaching model
   input_parameters <- as.data.frame(matrix(nrow = n_samples, ncol = 15))
