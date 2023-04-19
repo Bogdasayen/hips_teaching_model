@@ -20,14 +20,10 @@ library(ggplot2)
 # Define global parameters for the data and source code directories
 # Data could be separate location than GitHub project if data were sensitive
 data_directory <- "data"
-code_directory <- "code"
-optimisation_directory <- "code/optimisation"
+optimisation_directory <- "optimisation"
 
-# Load necessary functions
-source(paste0(code_directory, "/generate_input_parameters.R"))
-source(paste0(code_directory, "/generate_transition_matrices.R"))
-source(paste0(code_directory, "/generate_state_costs.R"))
-source(paste0(code_directory, "/generate_net_benefit.R"))
+# Load necessary functions from the package
+devtools::load_all()
 
 # Run optimisations scripts
 source(paste0(optimisation_directory, "/generate_transition_matrices_optimised.R"))
