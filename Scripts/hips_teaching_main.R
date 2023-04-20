@@ -9,7 +9,7 @@ set.seed(2345295)
 
 # Load necessary libraries
 # Install the latest version of BCEA from github
-# devtools::install_github("n8thangreen/BCEA")
+# install.packages("BCEA")
 # install.packages("devtools")
 # install.packages("roxygen2")
 # install.packages("readxl")
@@ -111,7 +111,7 @@ evppi_gp_1st_revision <- evppi(he = hips_bcea,
                                              "log_rate_1st_revision_hybrid",        
                                              "log_rate_1st_revision_reverse_hybrid"), 
                                input = input_parameters,  method = 'gp')
-evpi_table["1st revision probabilities", c("Per person", "Population")] <- evppi_gam_1st_revision$evppi[201] * c(1, discounted_population_size)
+evpi_table["1st revision probabilities", c("Per person", "Population")] <- evppi_gp_1st_revision$evppi[201] * c(1, discounted_population_size)
 
 
 # Log rate 2nd and higher revision probabilities
