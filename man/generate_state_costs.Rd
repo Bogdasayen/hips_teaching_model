@@ -2,8 +2,7 @@
 % Please edit documentation in R/generate_state_costs.R
 \name{generate_state_costs}
 \alias{generate_state_costs}
-\title{Function to generate state costs for each implant, sample, and state. This is
-used internally by the generate_net_benefit() function}
+\title{Generate state costs}
 \usage{
 generate_state_costs(input_parameters)
 }

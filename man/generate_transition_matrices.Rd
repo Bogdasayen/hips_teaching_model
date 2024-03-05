@@ -2,8 +2,7 @@
 % Please edit documentation in R/generate_transition_matrices.R
 \name{generate_transition_matrices}
 \alias{generate_transition_matrices}
-\title{Function to generate transition matrices. Used internall by 
-generate_net_benefit() function}
+\title{Generate transition matrices}
 \usage{
 generate_transition_matrices(input_parameters)
 }

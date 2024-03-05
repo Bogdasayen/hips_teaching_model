@@ -2,6 +2,8 @@
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
 # Howard Thom April 2023
 
+#' Generate net benefit
+#' 
 #' Function to use Markov modelling to simulate total costs, QALYs and net benefit
 #' @param input_parameters Matrix with row for each sample and column 
 #' for each parameter, with values samples for the model input parameters

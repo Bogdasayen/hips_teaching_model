@@ -2,6 +2,8 @@
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
 # Howard Thom April 2023
 
+#' Generate transition matrices
+#' 
 #' Function to generate transition matrices. Used internall by 
 #' generate_net_benefit() function
 #' @param input_parameters Matrix with row for each sample and column 

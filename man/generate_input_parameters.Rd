@@ -2,8 +2,7 @@
 % Please edit documentation in R/generate_input_parameters.R
 \name{generate_input_parameters}
 \alias{generate_input_parameters}
-\title{Function to generate random parameters to the Markov model
-These are based on 'parameters' defined in hips_input_data.xlsx}
+\title{Generate input parameters}
 \usage{
 generate_input_parameters(n_samples)
 }

@@ -4,6 +4,8 @@
 
 require(readxl)
 
+#' Generate input parameters
+#' 
 #' Function to generate random parameters to the Markov model
 #' These are based on 'parameters' defined in hips_input_data.xlsx
 #' @param n_samples Number of samples to generate
@@ -21,6 +23,7 @@ generate_input_parameters <- function(n_samples) {
                                   paste0("implant_cost_", implant_names)
   )
   
+  
   # Log rates of first revision for each implant
   log_rates_1st_revision_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "log_rates_1st_revision")
   # Log rates of second and higher revision
@@ -30,7 +33,7 @@ generate_input_parameters <- function(n_samples) {
   # Utilities for the health states
   state_utilities_raw <- read_excel(paste0(data_directory, "/hips_input_data.xlsx"), sheet = "state_utilities")
   
-
+  
   
   # Log rates of 1st revision are Normally distributed
   input_parameters$log_rate_1st_revision_cemented <- with(log_rates_1st_revision_raw, rnorm(n_samples, mean = Mean[Implant == "cemented"],
@@ -40,20 +43,21 @@ generate_input_parameters <- function(n_samples) {
   input_parameters$log_rate_1st_revision_hybrid <- with(log_rates_1st_revision_raw, rnorm(n_samples, mean = Mean[Implant == "hybrid"],
                                                                                           sd = SE[Implant == "hybrid"]))
   input_parameters$log_rate_1st_revision_reverse_hybrid <- with(log_rates_1st_revision_raw, rnorm(n_samples, mean = Mean[Implant == "reverse_hybrid"],
-                                                                                               sd = SE[Implant == "reverse_hybrid"]))
-
+                                                                                                  sd = SE[Implant == "reverse_hybrid"]))
+  
+  
   # Log rates of 2nd and higher revision are Normally distributed
   input_parameters$log_rate_2nd_revision <- with(other_log_rates_raw, rnorm(n_samples, mean =  Value[Parameter == "log_hazard_2nd_revision"],
-                                                  sd = Value[Parameter == "log_hazard_2nd_revision_se"]))
+                                                                            sd = Value[Parameter == "log_hazard_2nd_revision_se"]))
   input_parameters$log_rate_higher_revision <- with(other_log_rates_raw, rnorm(n_samples, mean =  Value[Parameter == "log_hazard_higher_revision"],
-                                                   sd = Value[Parameter == "log_hazard_higher_revision_se"]))
-
+                                                                               sd = Value[Parameter == "log_hazard_higher_revision_se"]))
+  
   # Implant costs are fixed
   input_parameters$implant_cost_cemented <- rep(with(costs_raw, Cost[Resource == "cost_cemented"]), n_samples)
   input_parameters$implant_cost_uncemented <- rep(with(costs_raw, Cost[Resource == "cost_uncemented"]), n_samples)
   input_parameters$implant_cost_hybrid <- rep(with(costs_raw, Cost[Resource == "cost_hybrid"]), n_samples)
   input_parameters$implant_cost_reverse_hybrid <- rep(with(costs_raw, Cost[Resource == "cost_reverse_hybrid"]), n_samples)
-
+  
   # Cost of revision is fixed
   input_parameters$cost_revision <- rep(with(costs_raw, Cost[Resource == "cost_revision"]), n_samples)
   
@@ -62,9 +66,12 @@ generate_input_parameters <- function(n_samples) {
   input_parameters$state_utility_post_thr <- with(state_utilities_raw, rnorm(n_samples, mean = Mean[State == "post_thr"],
                                                                              sd = SE[State == "post_thr"]))
   input_parameters$state_utility_post_1st_rev <- with(state_utilities_raw, rnorm(n_samples, mean = Mean[State == "post_1st_rev"],
-                                                                             sd = SE[State == "post_1st_rev"]))
-  input_parameters$state_utility_post_2nd_rev <- with(state_utilities_raw, rnorm(n_samples, mean = Mean[State == "post_2nd_rev"],
-                                                                                 sd = SE[State == "post_2nd_rev"]))
+                                                                                 sd = SE[State == "post_1st_rev"]))
+  
+  #input_parameters$state_utility_post_2nd_rev <- with(state_utilities_raw, rnorm(n_samples, mean = Mean[State == "post_2nd_rev"],
+   #                                                                              sd = SE[State == "post_2nd_rev"]))
+  
+  input_parameters$state_utility_post_2nd_rev <- rnorm(n_samples, mean = 0.232, sd = 0.025)
   # Zero utility in dead state
   input_parameters$state_utility_dead <- 0
   

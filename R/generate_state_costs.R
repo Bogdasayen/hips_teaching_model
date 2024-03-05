@@ -2,6 +2,8 @@
 # Fawsitt 2019 https://pubmed.ncbi.nlm.nih.gov/30832968/
 # Howard Thom April 2023
 
+#' Generate state costs
+#' 
 #' Function to generate state costs for each implant, sample, and state. This is
 #' used internally by the generate_net_benefit() function
 #' @param input_parameters Matrix with row for each sample and column 

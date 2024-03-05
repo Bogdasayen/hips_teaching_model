@@ -2,7 +2,7 @@
 % Please edit documentation in R/generate_net_benefit.R
 \name{generate_net_benefit}
 \alias{generate_net_benefit}
-\title{Function to use Markov modelling to simulate total costs, QALYs and net benefit}
+\title{Generate net benefit}
 \usage{
 generate_net_benefit(input_parameters, lambda = 20000)
 }
