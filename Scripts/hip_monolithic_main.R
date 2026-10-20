@@ -162,8 +162,8 @@ for (i_implant in 1:n_implants) {
   }
 }
 
-# Calculate net monetary benefit (at threshold = 20,000 per QALY)
-lambda <- 20000
+# Calculate net monetary benefit (at threshold = 25,000 per QALY)
+lambda <- 25000
 net_benefit <- total_qalys * lambda - total_costs
 
 # Incremental net benefit relative to the first implant (cemented)
