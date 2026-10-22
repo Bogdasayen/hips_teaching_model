@@ -1,5 +1,6 @@
 # HIPS Model - Monolithic Script
 # Based on Fawsitt et al. 2019
+# Qian Xin October 2026
 
 # Set seed for reproducibility
 set.seed(123456)
