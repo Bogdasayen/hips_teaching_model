@@ -4,27 +4,47 @@
 \alias{generate_state_costs}
 \title{Generate state costs}
 \usage{
-generate_state_costs(input_parameters)
+generate_state_costs(input_parameters, model_settings)
 }
 \arguments{
-\item{input_parameters}{Matrix with row for each sample and column 
-for each parameter, with values samples for the model input parameters}
+\item{input_parameters}{A data frame with one row per probabilistic sample
+and one column per parameter, as returned by
+\code{\link{generate_input_parameters}}.}
+
+\item{model_settings}{A list of model settings. This function uses
+\code{n_samples}, \code{state_names}, and \code{implant_names}.}
 }
 \value{
-Array of n_implants x n_samples x n_states, with values equal to costs 
-for each state for each implant and sample
+A numeric array with dimensions n_implants x n_samples x n_states,
+  holding the cost (in pounds) of one cycle in each state. The implant and
+  state dimensions are named.
 }
 \description{
-Function to generate state costs for each implant, sample, and state. This is
-used internally by the generate_net_benefit() function
+Computes the expected cost of spending one cycle in each health state, for
+each implant and probabilistic sample. In each living state the cost is the
+annual probability of the next revision multiplied by the cost of revision
+surgery, with the probability converted from the sampled log rate as
+\code{1 - exp(-exp(log_rate))}. The post-THR cost differs by implant because
+the first-revision rate is implant-specific; the post-revision costs are the
+same for every implant. The post second revision state carries the cost of
+third and higher revisions, which are modelled as a recurring cost rather
+than a change of state. The dead state has zero cost. Implant purchase costs
+are not included here; they are added once, at the start of the model, in
+\code{\link{generate_net_benefit}}.
 }
 \examples{
-# First sample the input parameters
-input_parameters <- generate_input_parameters(n_samples)
+model_settings <- list(
+  n_samples = 10,
+  state_names    = c("post_thr", "post_1st_rev", "post_2nd_rev", "dead"),
+  implant_names  = c("cemented", "uncemented", "hybrid", "reverse_hybrid"),
+  data_directory = "data")
+input_parameters <- generate_input_parameters(model_settings)
+state_costs      <- generate_state_costs(input_parameters, model_settings)
 
-# Generate the state costs
-state_costs <- generate_state_costs(input_parameters)
+# Sampled state costs for the cemented implant
+state_costs["cemented", , ]
 
-# Sampled costs for first implant
-state_costs[1, , ]
+# Mean cost of a year in each state, by implant
+apply(state_costs, c(1, 3), mean)
+
 }

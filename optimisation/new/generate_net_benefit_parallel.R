@@ -55,6 +55,10 @@ run_model_parallel <- function(n_runs, model_settings,
     return(lapply(seq_len(n_runs), run_one))
   }
   
+  if (!"HIPS" %in% rownames(utils::installed.packages()))
+    stop("Parallel runs need the package installed, so that each worker can ",
+         "load it: run devtools::install() from the package root, then try again")
+  
   future::plan(future::multisession,
                workers = max(1, parallel::detectCores() - 1))
   on.exit(future::plan(future::sequential), add = TRUE)

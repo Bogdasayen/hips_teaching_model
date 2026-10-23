@@ -2,20 +2,38 @@
 % Please edit documentation in R/generate_input_parameters.R
 \name{generate_input_parameters}
 \alias{generate_input_parameters}
-\title{Generate input parameters}
+\title{Generate input parameters for the Markov model}
 \usage{
-generate_input_parameters(n_samples)
+generate_input_parameters(model_settings)
 }
 \arguments{
-\item{n_samples}{Number of samples to generate}
+\item{model_settings}{A list of model settings. This function uses
+\code{n_samples} (number of probabilistic samples), \code{state_names}
+and \code{implant_names} (character vectors naming the health states and
+implants), and \code{data_directory} (path to the folder containing
+\code{hips_input_data.xlsx}).}
 }
 \value{
-Matrix with n_samples rows and 15 columns, one for each parameter
+A data frame with one row per probabilistic sample and one column
+  per parameter: the log rates of first revision for each implant, the log
+  rates of second and higher revision, the (fixed) cost of revision, the
+  health-state utilities, and the (fixed) cost of each implant.
 }
 \description{
-Function to generate random parameters to the Markov model
-These are based on 'parameters' defined in hips_input_data.xlsx
+Reads the model inputs from the Excel workbook and draws the probabilistic
+samples used by the rest of the model. The values are defined in the named
+sheets of \code{hips_input_data.xlsx}: \code{log_rates_1st_revision},
+\code{other_log_rates}, \code{costs}, and \code{state_utilities}.
+Revision rates are sampled on the log-rate scale and converted to
+probabilities later, in \code{\link{generate_transition_matrices}}.
 }
 \examples{
-sampled_input_parameters <- generate_input_parameters(10)
+model_settings <- list(
+  n_samples      = 10,
+  state_names    = c("post_thr", "post_1st_rev", "post_2nd_rev", "dead"),
+  implant_names  = c("cemented", "uncemented", "hybrid", "reverse_hybrid"),
+  data_directory = "data")
+input_parameters <- generate_input_parameters(model_settings)
+head(input_parameters)
+
 }

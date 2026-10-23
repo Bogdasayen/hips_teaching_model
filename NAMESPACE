@@ -3,4 +3,7 @@
 export(generate_input_parameters)
 export(generate_net_benefit)
 export(generate_state_costs)
+export(generate_state_qalys)
 export(generate_transition_matrices)
+importFrom(readxl,read_excel)
+importFrom(stats,rnorm)

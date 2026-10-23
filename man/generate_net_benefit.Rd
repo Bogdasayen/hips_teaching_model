@@ -4,31 +4,75 @@
 \alias{generate_net_benefit}
 \title{Generate net benefit}
 \usage{
-generate_net_benefit(input_parameters, lambda = 20000)
+generate_net_benefit(
+  transition_matrices,
+  state_costs,
+  state_qalys,
+  input_parameters,
+  model_settings,
+  lambda = 25000
+)
 }
 \arguments{
-\item{input_parameters}{Matrix with row for each sample and column 
-for each parameter, with values samples for the model input parameters}
+\item{transition_matrices}{Numeric array, n_cycles x n_implants x n_samples
+x n_states x n_states, as returned by
+\code{\link{generate_transition_matrices}}.}
 
-\item{lambda}{Willingness-to-pay threshold for net monetary benefit}
+\item{state_costs}{Numeric array, n_implants x n_samples x n_states, as
+returned by \code{\link{generate_state_costs}}.}
+
+\item{state_qalys}{Numeric array, n_implants x n_samples x n_states, as
+returned by \code{\link{generate_state_qalys}}.}
+
+\item{input_parameters}{A data frame with one row per probabilistic sample
+and one column per parameter, as returned by
+\code{\link{generate_input_parameters}}. Used here for the implant costs.}
+
+\item{model_settings}{A list of model settings. This function uses
+\code{n_samples}, \code{n_cycles}, \code{cycle_length},
+\code{discount_rate}, \code{state_names}, and \code{implant_names}.}
+
+\item{lambda}{Willingness-to-pay threshold in pounds per QALY, a single
+non-negative number. Default 25000.}
 }
 \value{
-List of matrices total_costs, total_qalys, net_benefit and 
-incremental_net_benefit with n_implants rows and n_samples columns
+A list of four numeric matrices, each n_implants x n_samples:
+  \code{total_costs}, \code{total_qalys}, \code{net_benefit}, and
+  \code{incremental_net_benefit} (relative to the first implant).
 }
 \description{
-Function to use Markov modelling to simulate total costs, QALYs and net benefit
+Runs the Markov cohort simulation and returns discounted total costs, total
+QALYs, net monetary benefit, and incremental net benefit for each implant
+and probabilistic sample. The cohort starts in the post-THR state and is
+traced through the states by multiplying the cohort vector by the
+transition matrix in each cycle. Costs and QALYs accrued in each cycle are
+the state occupancy multiplied by the per-cycle state costs and QALYs,
+discounted at the rate in \code{model_settings}, and summed over the time
+horizon. The implant purchase cost is added once, at the start.
+}
+\details{
+The function takes the model's components as arguments rather than
+building them, so its logic can be tested on known inputs without rebuilding
+the rest of the model. It checks each argument before the simulation begins.
 }
 \examples{
-# First sample the input parameters
-input_parameters <- generate_input_parameters(n_samples)
+model_settings <- list(
+  n_samples = 10, n_cycles = 30, cycle_length = 1, initial_age = 65,
+  discount_rate = 0.035,
+  state_names    = c("post_thr", "post_1st_rev", "post_2nd_rev", "dead"),
+  implant_names  = c("cemented", "uncemented", "hybrid", "reverse_hybrid"),
+  data_directory = "data")
+input_parameters    <- generate_input_parameters(model_settings)
+transition_matrices <- generate_transition_matrices(input_parameters, model_settings)
+state_costs         <- generate_state_costs(input_parameters, model_settings)
+state_qalys         <- generate_state_qalys(input_parameters, model_settings)
+model_output <- generate_net_benefit(transition_matrices, state_costs,
+                                     state_qalys, input_parameters,
+                                     model_settings, lambda = 25000)
 
-# Generate the net benefit using the above input parameters
-model_output <- generate_net_benefit(input_parameters, lambda = 20000)
-
-# Average costs
+# Average costs, QALYs and incremental net benefit by implant
 rowMeans(model_output$total_costs)
-
-# Average QALYS
 rowMeans(model_output$total_qalys)
+rowMeans(model_output$incremental_net_benefit)
+
 }

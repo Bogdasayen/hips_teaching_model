@@ -4,31 +4,49 @@
 \alias{generate_transition_matrices}
 \title{Generate transition matrices}
 \usage{
-generate_transition_matrices(input_parameters)
+generate_transition_matrices(input_parameters, model_settings)
 }
 \arguments{
-\item{input_parameters}{Matrix with row for each sample and column 
-for each parameter, with values samples for the model input parameters}
+\item{input_parameters}{A data frame with one row per probabilistic sample
+and one column per parameter, as returned by
+\code{\link{generate_input_parameters}}.}
+
+\item{model_settings}{A list of model settings. This function uses
+\code{n_samples}, \code{n_cycles}, \code{initial_age}, \code{state_names},
+\code{implant_names}, and \code{data_directory}.}
 }
 \value{
-Array of n_cycles by n_implants by n_samples by n_states by n_states, 
-with values equal to transition probabilities. These correspond to a n_state
-by n_state transition matrix for each cycle, implant and sample.
+A numeric array with dimensions n_cycles x n_implants x n_samples x
+n_states x n_states, holding the probability of moving from each state to each state 
+in each cycle, for each implant and sample. The implant and state dimensions are named.
 }
 \description{
-Function to generate transition matrices. Used internall by 
-generate_net_benefit() function
+Builds one transition matrix for every cycle, implant, and probabilistic
+sample. Revision transitions are derived from the sampled log rates in
+\code{input_parameters}, converted to annual probabilities as
+\code{1 - exp(-exp(log_rate))}. Death transitions are taken from the UK
+life table in \code{hips_input_data.xlsx}, which is read here rather than
+stored in \code{input_parameters} because it is fixed and age-specific.
+Each diagonal is set so that every row sums to one. The transition from
+post second revision to a further revision is not modelled as a change of
+state; its cost is handled in \code{\link{generate_state_costs}}.
 }
 \examples{
-# First sample the input parameters
-input_parameters <- generate_input_parameters(n_samples)
+model_settings <- list(
+  n_samples = 10, n_cycles = 30, initial_age = 65,
+  state_names    = c("post_thr", "post_1st_rev", "post_2nd_rev", "dead"),
+  implant_names  = c("cemented", "uncemented", "hybrid", "reverse_hybrid"),
+  data_directory = "data")
+input_parameters    <- generate_input_parameters(model_settings)
+transition_matrices <- generate_transition_matrices(input_parameters, model_settings)
 
-transition_matrices <- generate_transition_matrices(input_parameters)
-
-# The transition matrix for first cycle, first implant and first sample
+# The transition matrix for the first cycle, first implant and first sample
 transition_matrices[1, 1, 1, , ]
-#' # The transition matrix for first cycle, third implant and second sample
+
+# The same for the first cycle, third implant and second sample
 transition_matrices[1, 3, 2, , ]
-# Sampled transitions from the first state for first cycle and third implant
-transition_matrices[1, 3, , 1, , ]
+
+# Transitions out of post_thr for all samples, first cycle, cemented implant
+transition_matrices[1, "cemented", , "post_thr", ]
+
 }
