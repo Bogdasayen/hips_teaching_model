@@ -33,7 +33,7 @@ model_settings <- list(
   implant_names  = c("cemented", "uncemented", "hybrid", "reverse_hybrid"),
   data_directory = "data")
 
-n_times <- 20 # number of times each function is run
+n_times <- 100 # number of times each function is run
 time_it <- function(expr, times = n_times) {
   e <- substitute(expr); env <- parent.frame()
   med <- suppressWarnings(median(microbenchmark(eval(e, env), times = times)$time)) / 1e9
@@ -123,19 +123,28 @@ part2 <- do.call(rbind, lapply(c("baseline", "vectorised", "cpp"), function(tech
 part2$reduction_percent <- 100 * (1 - part2$median_seconds / part2$median_seconds[1])
 
 #  many complete runs, sequential vs parallel
-n_runs <- 8
-part3 <- do.call(rbind, lapply(c(FALSE, TRUE), function(parallel) {
-  data.frame(part = sprintf("3. %d complete runs (vectorised model)", n_runs), stage = "all",
-             technique = if (parallel) "parallel (multisession)" else "sequential",
-             median_seconds = time_it(
-               run_model_parallel(n_runs, model_settings,
-                                  net_benefit_fun = generate_net_benefit_vectorised,
-                                  transition_fun  = generate_transition_matrices_vectorised,
-                                  parallel = parallel),
-               times = 5))
-}))
-part3$reduction_percent <- 100 * (1 - part3$median_seconds / part3$median_seconds[1])
+part3_settings <- expand.grid(
+  model  = c("baseline", "vectorised"),
+  n_runs = c(8, 100),
+  stringsAsFactors = FALSE)
 
+part3 <- do.call(rbind, lapply(seq_len(nrow(part3_settings)), function(k) {
+  s  <- part3_settings[k, ]
+  nb <- if (s$model == "baseline") generate_net_benefit else generate_net_benefit_vectorised
+  tm <- if (s$model == "baseline") generate_transition_matrices else generate_transition_matrices_vectorised
+  rows <- do.call(rbind, lapply(c(FALSE, TRUE), function(parallel) {
+    data.frame(part = sprintf("3. %d complete runs, %s model", s$n_runs, s$model),
+               stage = "all",
+               technique = if (parallel) "parallel (multisession)" else "sequential",
+               median_seconds = time_it(
+                 run_model_parallel(s$n_runs, model_settings,
+                                    net_benefit_fun = nb, transition_fun = tm,
+                                    parallel = parallel),
+                 times = 3))
+  }))
+  rows$reduction_percent <- 100 * (1 - rows$median_seconds / rows$median_seconds[1])
+  rows
+}))
 #  Write out
 results <- rbind(part1, part2, part3)
 results$median_seconds    <- round(results$median_seconds, 4)
