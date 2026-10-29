@@ -1,0 +1,289 @@
+---
+title: 'The hip replacement model: a user guide'
+author: "Qian Xin and Howard Thom"
+date: "`r Sys.Date()`"
+output: html_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", message = FALSE, warning = FALSE)
+# The vignette is written to run from the package root, where the data folder is.
+# When knitted from vignettes/ (as devtools::build_vignettes() does), move up one level.
+if (basename(getwd()) == "vignettes") knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
+## What the model is
+
+This package contains a cohort Markov model of total hip replacement, a
+simplified version of the model published by Fawsitt et al. (2019) that
+compared prosthetic implant combinations using data from the UK National
+Joint Registry (NJR) and the Swedish Hip Arthroplasty Register (SHAR).
+It is used as the worked example in the tutorial on modularisation,
+optimisation, documentation and testing of health economic models in R,
+and this guide walks through running it from end to end.
+
+The model compares four implant combinations for men aged 65 to 74
+having a first total hip replacement:
+
+| Implant        | Bearing surface         | Head size | Fixation       |
+|----------------|-------------------------|-----------|----------------|
+| Cemented       | Metal-on-polyethylene   | Small     | Cemented       |
+| Uncemented     | Ceramic-on-polyethylene | Small     | Uncemented     |
+| Hybrid         | Ceramic-on-polyethylene | Large     | Hybrid         |
+| Reverse hybrid | Ceramic-on-polyethylene | Small     | Reverse hybrid |
+
+Patients enter the model at age 65 in the post-THR state and are
+followed for 30 one-year cycles. Each year they may stay where they are,
+have a revision operation, or die.
+
+## Health states
+
+```{r model-diagram, echo = FALSE, fig.cap = "Model structure. Patients may need a first and then a second revision; the post-2nd-revision state also carries the cost of any further revisions. Death is possible from every living state."}
+par(mar = c(0, 0, 0, 0))
+plot(NA, xlim = c(0, 10), ylim = c(0, 6), axes = FALSE, xlab = "", ylab = "", asp = 1)
+box_at <- function(x, y, label) {
+  rect(x - 1.2, y - 0.5, x + 1.2, y + 0.5, col = "#EEF3F8", border = "#2C5F8A", lwd = 1.5)
+  text(x, y, label, cex = 0.85)
+}
+box_at(1.5, 4.5, "Post THR")
+box_at(5.0, 4.5, "Post 1st\nrevision")
+box_at(8.5, 4.5, "Post 2nd\nrevision")
+box_at(5.0, 1.0, "Dead")
+arrows(2.75, 4.5, 3.75, 4.5, length = 0.1, lwd = 1.5)
+arrows(6.25, 4.5, 7.25, 4.5, length = 0.1, lwd = 1.5)
+arrows(1.5, 3.95, 3.7, 1.3, length = 0.1, lwd = 1.5)
+arrows(5.0, 3.95, 5.0, 1.55, length = 0.1, lwd = 1.5)
+arrows(8.5, 3.95, 6.3, 1.3, length = 0.1, lwd = 1.5)
+# Self loops: staying in a state, and further revisions from post 2nd revision
+for (x in c(1.5, 5.0, 8.5)) {
+  t <- seq(0.3, 2.85, length.out = 40)
+  lines(x + 0.6 * cos(t), 5.0 + 0.45 * sin(t), lwd = 1.2)
+  arrows(x + 0.6 * cos(0.35), 5.0 + 0.45 * sin(0.35), x + 0.6 * cos(0.3), 5.0 + 0.45 * sin(0.3), length = 0.07)
+}
+text(8.5, 5.75, "3rd+ revision (cost only)", cex = 0.7)
+```
+
+The four states are:
+
+-   **Post THR**: living with the primary implant. Each year there is a
+    small, implant-specific probability of a first revision.
+-   **Post 1st revision**: living with the implant from the first
+    revision. The probability of a second revision is the same for all
+    implants.
+-   **Post 2nd revision**: living after two or more revisions. Patients
+    stay in this state, but each year they face a probability of a
+    further revision that is charged as a cost without a change of
+    state.
+-   **Dead**: the absorbing state, reached from any living state with
+    the age-specific probability from the UK life table.
+
+## Setting up
+
+The model functions are loaded with `devtools::load_all()`, which makes
+every function in the `R/` folder available without installing the
+package. In this repository the functions that take a `model_settings`
+list are in `paper/R/`, alongside the original package functions, so
+they are sourced from there.
+
+```{r load-functions}
+library(readxl)
+for (function_file in list.files("paper/R", pattern = "\\.R$", full.names = TRUE)) {
+  source(function_file)
+}
+```
+
+All structural settings of the model are collected in a single list that
+is passed to every function. Changing the number of samples, the time
+horizon or the discount rate means changing it here and nowhere else.
+
+```{r model-settings}
+model_settings <- list(
+  n_samples      = 1000,
+  n_cycles       = 30,        # 30 one-year cycles
+  cycle_length   = 1,         # years
+  initial_age    = 65,        # cohort starts at age 65
+  discount_rate  = 0.035,     # 3.5% per year
+  state_names    = c("post_thr", "post_1st_rev", "post_2nd_rev", "dead"),
+  implant_names  = c("cemented", "uncemented", "hybrid", "reverse_hybrid"),
+  data_directory = "data"     # data may be stored separately if sensitive
+)
+```
+
+## Input data
+
+All inputs are held in one workbook, `data/hips_input_data.xlsx`, with a
+sheet for each type of parameter. Keeping them there, rather than in the
+code, means a reviewer can check every number without running anything,
+and the file can be stored separately if the data are sensitive. The
+sheets are:
+
+```{r input-sheets}
+input_file <- file.path(model_settings$data_directory, "hips_input_data.xlsx")
+excel_sheets(input_file)
+```
+
+First revision rates are the only inputs that differ between implants.
+They are stored as log rates with a standard error, and sampled on the
+log scale:
+
+```{r input-revision}
+knitr::kable(read_excel(input_file, sheet = "log_rates_1st_revision")[, c("Implant", "Mean", "SE")],
+             digits = 3, caption = "Log rates of first revision by implant (NJR/SHAR)")
+```
+
+Second and higher revision rates are shared across implants, costs are
+fixed, and state utilities are sampled from normal distributions:
+
+```{r input-other}
+knitr::kable(read_excel(input_file, sheet = "other_log_rates")[, c("Parameter", "Value")],
+             digits = 3, caption = "Log rates of second and higher revision")
+knitr::kable(read_excel(input_file, sheet = "costs")[, c("Resource", "Cost")],
+             caption = "Costs (GBP, 2015-16 prices)")
+knitr::kable(read_excel(input_file, sheet = "state_utilities")[, c("State", "Mean", "SE")],
+             caption = "Health state utilities (UK PROMs)")
+```
+
+Mortality is taken from the `uk_lifetables` sheet, which the transition
+matrix function reads itself because it is fixed and does not need to be
+sampled.
+
+## Running the model
+
+The analysis is five function calls, each returning one object that the
+next one needs. Setting the seed first makes the probabilistic samples
+reproducible.
+
+```{r run-model}
+set.seed(123456)
+
+input_parameters    <- generate_input_parameters(model_settings)
+transition_matrices <- generate_transition_matrices(input_parameters, model_settings)
+state_costs         <- generate_state_costs(input_parameters, model_settings)
+state_qalys         <- generate_state_qalys(input_parameters, model_settings)
+
+model_output <- generate_net_benefit(transition_matrices, state_costs,
+                                     state_qalys, input_parameters,
+                                     model_settings, lambda = 20000)
+```
+
+`input_parameters` has one row per probabilistic sample and one column
+per parameter:
+
+```{r input-parameters}
+dim(input_parameters)
+head(input_parameters[, 1:6], 3)
+```
+
+`model_output` is a list of four matrices, each with one row per implant
+and one column per sample: `total_costs`, `total_qalys`, `net_benefit`
+and `incremental_net_benefit` (relative to the first implant, cemented).
+
+```{r output-structure}
+str(model_output, max.level = 1)
+```
+
+## Results
+
+Discounted lifetime costs and QALYs per patient, averaged over the
+probabilistic samples:
+
+```{r results-table}
+lambda <- 20000
+results <- data.frame(
+  Implant = model_settings$implant_names,
+  `Mean cost (GBP)` = rowMeans(model_output$total_costs),
+  `Mean QALYs` = rowMeans(model_output$total_qalys),
+  `Net benefit (GBP)` = rowMeans(model_output$net_benefit),
+  check.names = FALSE, row.names = NULL)
+results$`Incremental net benefit vs cemented (GBP)` <-
+  results$`Net benefit (GBP)` - results$`Net benefit (GBP)`[1]
+knitr::kable(results, digits = c(0, 0, 3, 0, 0),
+             caption = "Mean discounted costs, QALYs and net benefit at GBP 20,000 per QALY")
+```
+
+The cost-effectiveness plane shows each sample's incremental cost and
+QALYs for the three alternatives relative to the cemented implant:
+
+```{r ce-plane, fig.cap = "Cost-effectiveness plane: incremental costs and QALYs versus the cemented implant, one point per probabilistic sample. The dashed line is the GBP 20,000 per QALY threshold."}
+inc_costs <- sweep(model_output$total_costs, 2, model_output$total_costs[1, ])[-1, ]
+inc_qalys <- sweep(model_output$total_qalys, 2, model_output$total_qalys[1, ])[-1, ]
+colours <- c("#D55E00", "#0072B2", "#009E73")
+par(mar = c(4.5, 4.5, 1, 1))
+plot(NA, xlim = range(inc_qalys), ylim = range(inc_costs),
+     xlab = "Incremental QALYs vs cemented", ylab = "Incremental cost vs cemented (GBP)")
+abline(h = 0, v = 0, col = "grey70")
+abline(a = 0, b = lambda, lty = 2)
+for (i in 1:3) points(inc_qalys[i, ], inc_costs[i, ], pch = 16, cex = 0.4, col = adjustcolor(colours[i], 0.5))
+legend("topleft", legend = rownames(inc_costs), col = colours, pch = 16, bty = "n")
+```
+
+The cost-effectiveness acceptability curve gives the probability that
+each implant has the highest net benefit across a range of thresholds:
+
+```{r ceac, fig.cap = "Cost-effectiveness acceptability curves."}
+thresholds <- seq(0, 50000, by = 1000)
+ceac <- sapply(thresholds, function(wtp) {
+  nb <- model_output$total_qalys * wtp - model_output$total_costs
+  best <- apply(nb, 2, which.max)
+  tabulate(best, nbins = length(model_settings$implant_names)) / model_settings$n_samples
+})
+par(mar = c(4.5, 4.5, 1, 1))
+matplot(thresholds / 1000, t(ceac), type = "l", lty = 1, lwd = 2, col = c("grey40", colours),
+        xlab = "Willingness to pay (GBP thousand per QALY)", ylab = "Probability cost-effective",
+        ylim = c(0, 1))
+legend(0, 0.8, legend = model_settings$implant_names, col = c("grey40", colours), lwd = 2, bty = "n")
+```
+
+The same results can be passed to the BCEA package for a fuller
+analysis, including the expected value of perfect information:
+
+```{r bcea, eval = FALSE}
+library(BCEA)
+hips_bcea <- bcea(e = t(model_output$total_qalys), c = t(model_output$total_costs),
+                  ref = 1, interventions = model_settings$implant_names, Kmax = 50000)
+summary(hips_bcea)
+ceplane.plot(hips_bcea)
+ceac.plot(hips_bcea)
+evi.plot(hips_bcea)
+```
+
+## Reading the results
+
+The cemented implant is the cheapest and the uncemented the most
+effective, but the QALY differences between implants are small (a few
+hundredths of a QALY over a lifetime) while the cost differences run to
+over GBP 1,000, driven mainly by the price of the primary implant. At
+GBP 20,000 per QALY the cemented implant has the highest expected net
+benefit and is almost certain to be the cost-effective choice. The
+acceptability curves show that this depends on the threshold: above
+about GBP 28,000 per QALY the hybrid implant becomes the most likely to
+be cost-effective, and above about GBP 42,000 the uncemented implant
+does. This matches the finding of the full model by Fawsitt et al. that
+cemented metal-on-polyethylene implants were the most cost-effective
+option for this age group.
+
+Because the probabilistic samples are drawn with a fixed seed,
+re-running this vignette reproduces these numbers exactly. Changing
+`n_samples` in `model_settings` will change them slightly; increasing it
+narrows the Monte Carlo error of the means.
+
+## Going further
+
+-   `generate_net_benefit()` has a `method` argument. The default runs
+    the original nested loops; `method = "vectorised"` gives the same
+    results several times faster and is the version to use for large
+    probabilistic or value-of-information analyses.
+-   `optimisation/time_comparisons.R` benchmarks all the optimisation
+    methods described in the tutorial.
+-   `?generate_input_parameters` and the other help pages document each
+    function's arguments and return values.
+
+## References
+
+Fawsitt CG, Thom HHZ, Hunt LP, et al. Choice of prosthetic implant
+combinations in total hip replacement: cost-effectiveness analysis using
+UK and Swedish hip joint registries data. *Value in Health*
+2019;22(3):303-12.
