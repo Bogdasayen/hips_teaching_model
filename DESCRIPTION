@@ -4,3 +4,7 @@ Title: Hip replacement model for teaching economic evaluation modelling in R
 Version: 0.0.1.0
 RoxygenNote: 7.3.2
 Encoding: UTF-8
+Imports: readxl
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, Rcpp, future, future.apply, microbenchmark, BCEA
+Config/testthat/edition: 3
+VignetteBuilder: knitr

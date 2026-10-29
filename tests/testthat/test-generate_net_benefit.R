@@ -1,28 +1,9 @@
-test_that("generate_net_benefit reproduces an independent nested-loop implementation", {
-  discount_factors <- (1 / (1 + model_settings$discount_rate))^(0:(n_cycles - 1))
-  implant_costs <- t(input_parameters[, paste0("implant_cost_",
-                                               model_settings$implant_names)])
-  ref_costs <- ref_qalys <- matrix(NA, n_implants, n_samples)
-  for (i_implant in 1:n_implants) {
-    for (i_sample in 1:n_samples) {
-      cohort <- matrix(0, n_cycles, n_states)
-      cohort[1, 1] <- 1
-      for (i_cycle in 2:n_cycles) {
-        cohort[i_cycle, ] <- cohort[i_cycle - 1, ] %*%
-          transition_matrices[i_cycle - 1, i_implant, i_sample, , ]
-      }
-      ref_costs[i_implant, i_sample] <- implant_costs[i_implant, i_sample] +
-        sum((cohort %*% state_costs[i_implant, i_sample, ]) * discount_factors)
-      ref_qalys[i_implant, i_sample] <-
-        sum((cohort %*% state_qalys[i_implant, i_sample, ]) * discount_factors)
-    }
-  }
-  
-  for (method in c("loop", "vectorised_samples", "vectorised")) {
-    output <- run_model(method = method)
-    expect_equal(unname(output$total_costs), ref_costs, tolerance = 1e-10)
-    expect_equal(unname(output$total_qalys), ref_qalys, tolerance = 1e-10)
-  }
+test_that("generate_net_benefit reproduces the independent nested-loop implementation", {
+  reference <- reference_totals(transition_matrices, state_costs, state_qalys,
+                                input_parameters, model_settings)
+  output <- run_model()
+  expect_equal(unname(output$total_costs), reference$total_costs, tolerance = 1e-10)
+  expect_equal(unname(output$total_qalys), reference$total_qalys, tolerance = 1e-10)
 })
 
 test_that("results match the saved reference output", {

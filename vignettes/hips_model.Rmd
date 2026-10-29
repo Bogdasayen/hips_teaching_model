@@ -82,17 +82,11 @@ The four states are:
 
 ## Setting up
 
-The model functions are loaded with `devtools::load_all()`, which makes
-every function in the `R/` folder available without installing the
-package. In this repository the functions that take a `model_settings`
-list are in `paper/R/`, alongside the original package functions, so
-they are sourced from there.
+The model functions are loaded with devtools::load_all(), which makes every function in the R/ folder available without installing the package.
 
 ```{r load-functions}
 library(readxl)
-for (function_file in list.files("paper/R", pattern = "\\.R$", full.names = TRUE)) {
-  source(function_file)
-}
+devtools::load_all(quiet = TRUE)
 ```
 
 All structural settings of the model are collected in a single list that
@@ -166,7 +160,7 @@ state_qalys         <- generate_state_qalys(input_parameters, model_settings)
 
 model_output <- generate_net_benefit(transition_matrices, state_costs,
                                      state_qalys, input_parameters,
-                                     model_settings, lambda = 20000)
+                                     model_settings, lambda = 25000)
 ```
 
 `input_parameters` has one row per probabilistic sample and one column
@@ -191,7 +185,7 @@ Discounted lifetime costs and QALYs per patient, averaged over the
 probabilistic samples:
 
 ```{r results-table}
-lambda <- 20000
+lambda <- 25000
 results <- data.frame(
   Implant = model_settings$implant_names,
   `Mean cost (GBP)` = rowMeans(model_output$total_costs),
